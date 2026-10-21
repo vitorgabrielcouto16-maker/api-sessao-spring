@@ -1,10 +1,9 @@
 package sessao_api.demo;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
 
 
 @RestController
@@ -20,4 +19,31 @@ public class UsuarioController {
     public Usuario cadastrar (@RequestBody Usuario usuario) {
         return repository.save(usuario);
     }
+    @PostMapping("/login")
+
+    public String login (@RequestBody Usuario usuario, HttpSession sessao){
+        Optional<Usuario> resultado = repository.findByEmail(usuario.getEmail());
+
+        if (resultado.isEmpty()){
+            return "Email não encontrado";
+        }
+        Usuario salvo = resultado.get();
+
+        if (!salvo.getSenha().equals(usuario.getSenha())){
+            return "Senha incorreta";
+        }
+        sessao.setAttribute("QuemEntrou", salvo.getNome());
+        sessao.setMaxInactiveInterval(60);
+        return "Login realizado com sucesso";
+    }
+    @GetMapping("/acesso-restrito")
+    public String acessoRestrito (HttpSession sessao){
+        Object login = sessao.getAttribute("QuemEntrou");
+
+        if (login == null){
+            return "Usuario sem login";
+        }
+        return "Acesso autorizado";
+    }
+
 }
